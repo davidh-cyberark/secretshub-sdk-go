@@ -28,5 +28,22 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+node_modules
+
+local.env
+**/Archive
+*.bak
+*.BAK
+.DS_Store
+
+bin/oapi-codegen
+bin/secretshub-client
+bin/identity-client
+bin/get-policies
+bin/get-all-stores
+
+stores/
+data/
+
