@@ -43,6 +43,7 @@ bin/secretshub-client
 bin/identity-client
 bin/get-policies
 bin/get-all-stores
+bin/get-secrets
 
 stores/
 data/
