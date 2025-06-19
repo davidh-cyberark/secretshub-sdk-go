@@ -2,14 +2,16 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/davidh-cyberark/identityadmin-sdk-go/identity"
-	"github.com/davidh-cyberark/secretshub-sdk-go/secretshub"
 	"io"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/davidh-cyberark/identityadmin-sdk-go/identity"
+	"github.com/davidh-cyberark/secretshub-sdk-go/secretshub"
 )
 
 var (
@@ -80,7 +82,7 @@ func main() {
 	//--header 'Authorization: Bearer 123'
 
 	projection := "EXTEND" //  Can be EXTEND, REGULAR, METADATA.
-	filter := fmt.Sprintf("filter.safeName EQ %s", *safename)
+	filter := fmt.Sprintf("filter.data.safeName EQ %s", *safename)
 
 	//safeName	Filter the sync policies by the Safe name.
 	//GET https://<sub domain>.secretshub.cyberark.cloud/api/policies?projection=EXTEND&filter=filter.safeName EQ MySafeName
@@ -89,8 +91,8 @@ func main() {
 	//GET https://<sub domain>.secretshub.cyberark.cloud/api/policies?filter=target.id EQ store-cfd25162-f8a9-4d94-8d36-f46c4b60d651
 
 	params := &secretshub.ListPoliciesApiPoliciesGetParams{
-		Projection: projection,
-		Filter:     filter,
+		Projection: &projection,
+		Filter:     &filter,
 	}
 	policies, err := client.ListPoliciesApiPoliciesGetWithResponse(ctx, params, AddAcceptApplicationJSONHeader)
 	if err != nil {
@@ -113,14 +115,20 @@ func main() {
 		if err != nil {
 			logger.Fatalf("failed to convert policy: %v", err)
 		}
-		fmt.Printf("Policy: %+v\n", p)
+		PrintAsJSON(p)
 	}
 
 	logger.Println("Successfully listed sync policies")
 }
-
+func PrintAsJSON(obj interface{}) {
+	data, err := json.MarshalIndent(obj, "", "  ")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to marshal object to JSON: %v\n", err)
+		return
+	}
+	fmt.Println(string(data))
+}
 func AddAcceptApplicationJSONHeader(_ context.Context, req *http.Request) error {
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Accept", "application/x.secretshub.beta+json")
 	return nil
 }

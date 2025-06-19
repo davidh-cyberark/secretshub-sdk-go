@@ -25,6 +25,11 @@ const (
 	ExternalStateChangeActionEnable  ExternalStateChangeAction = "enable"
 )
 
+// Defines values for FilterType.
+const (
+	PAMSAFE FilterType = "PAM_SAFE"
+)
+
 // Defines values for GsmSecretVendorDataReplicationMethod.
 const (
 	AUTOMATICUSERMANAGED GsmSecretVendorDataReplicationMethod = "AUTOMATIC, USER_MANAGED"
@@ -517,7 +522,7 @@ type FilterOutput struct {
 }
 
 // FilterType An enumeration.
-type FilterType = map[string]interface{}
+type FilterType string
 
 // GcpGsmData defines model for GcpGsmData.
 type GcpGsmData struct {
@@ -1128,10 +1133,10 @@ type PatchApiConfigurationJSONBody struct {
 // ListPoliciesApiPoliciesGetParams defines parameters for ListPoliciesApiPoliciesGet.
 type ListPoliciesApiPoliciesGetParams struct {
 	// Filter Filter the Policies. For example, by Safe name
-	Filter string `form:"filter" json:"filter"`
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
-	// Projection Data representation method. Can be EXTEND, REGULAR, METADATA.
-	Projection string `form:"projection" json:"projection"`
+	// Projection Data representation method. Can be EXTEND, REGULAR, METADATA. Default is REGULAR if param is not set.
+	Projection *string `form:"projection,omitempty" json:"projection,omitempty"`
 }
 
 // PolicyCreateApiPoliciesPostJSONBody defines parameters for PolicyCreateApiPoliciesPost.

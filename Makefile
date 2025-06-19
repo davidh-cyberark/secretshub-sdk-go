@@ -49,7 +49,7 @@ secretshub-client: $(BINDIR)/secretshub-client ## Build the secretshub-client bi
 build-all: secretshub-client get-all-stores get-secrets get-policies ## Build all binaries
 
 .PHONY: deps vardump clean realclean
-deps: oapi-codegen redocly-cli ## Install dependencies
+deps: oapi-codegen redocly-cli identity-client ## Install dependencies
 
 clean::
 	rm -f $(BINDIR)/secretshub-client
@@ -59,12 +59,16 @@ clean::
 
 realclean:: clean
 	rm -f secretshub/*.gen.go
+
+distclean:: realclean
 	rm -f $(BINDIR)/identity-client
+	rm -f $(BINDIR)/oapi-codegen
 
 vardump::
 	@echo "Makefile: BINDIR: $(BINDIR)"
 	@echo "Makefile: OPENAPI_SPECS: $(OPENAPI_SPECS)"
 
+# Helpers
 .PHONY: identity-client
 identity-client: $(BINDIR)/identity-client ## Install the identity-client binary from the identityadmin-sdk-go examples
 
