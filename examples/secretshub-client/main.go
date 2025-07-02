@@ -4,8 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/davidh-cyberark/identityadmin-sdk-go/identity"
@@ -31,12 +30,16 @@ func main() {
 		os.Exit(0)
 	}
 
-	// logger
-	logger := log.New(os.Stderr, "[secretshub-client] ", log.LstdFlags)
-
-	if !*debug {
-		logger.SetOutput(io.Discard)
+	slogOpts := &slog.HandlerOptions{}
+	if *debug {
+		slogOpts.Level = slog.LevelDebug
 	}
+	handler := slog.NewJSONHandler(os.Stdout, slogOpts).WithAttrs([]slog.Attr{
+		slog.String("service", "secretshub"),
+		slog.String("command", "secretshub-client"),
+	})
+	logger := slog.New(handler)
+	slog.SetDefault(logger)
 
 	ctx := context.Background()
 
@@ -50,30 +53,32 @@ func main() {
 	idClient, idClientErr := identity.NewClientWithResponses(*idtenanturl,
 		identity.WithRequestEditorFn(userAuth.Intercept))
 	if idClientErr != nil {
-		logger.Fatalf("failed to create id client: %v", idClientErr)
+		slog.Error(fmt.Sprintf("failed to create id client: %v", idClientErr))
+		os.Exit(1)
 	}
 
 	// Create the Identity service with the client and authentication provider
 	service := &identity.Service{
 		TenantURL:     *idtenanturl,
 		Client:        idClient,
-		Logger:        logger,
 		AuthnProvider: userAuth,
 	}
 
-	ctx = context.WithValue(ctx, identity.IdentityService, service)
+	ctx = context.WithValue(ctx, identity.IdentityService, service) // context passed into client rest methods
 
 	client, clientErr := secretshub.NewClientWithResponses(*shurl,
 		secretshub.WithRequestEditorFn(userAuth.Intercept))
 	if clientErr != nil {
-		logger.Fatalf("failed to create secretshub client: %v", clientErr)
+		slog.Error(fmt.Sprintf("failed to create secretshub client: %v", clientErr))
+		os.Exit(1)
 	}
 
 	if client == nil {
-		logger.Fatalf("failed to create secretshub client")
+		slog.Error("failed to create secretshub client")
+		os.Exit(1)
 	}
 
-	logger.Println("Successfully created Secrets Hub client.")
+	slog.Info("Successfully created Secrets Hub client.")
 
 	// Use the client to interact with the Secrets Hub API
 }

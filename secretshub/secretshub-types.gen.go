@@ -1218,7 +1218,6 @@ type ListSecretsApiSecretsGetParams struct {
 
 	// Filter Filter the returned data using one or more conditions.
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
-	Accept string  `json:"Accept"`
 }
 
 // PatchApiConfigurationJSONRequestBody defines body for PatchApiConfiguration for application/json ContentType.

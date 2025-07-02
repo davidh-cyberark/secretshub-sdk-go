@@ -25,7 +25,7 @@ func main() {
 	idpass := flag.String("idpass", "", "Identity user password")
 	shurl := flag.String("shurl", "", "Secrets Hub URL, Ex: https://EXAMPLE.secretshub.cyberark.cloud/")
 
-	storedir := flag.String("storedir", "stores", "Directory to save secret stores data (default: stores)")
+	storedir := flag.String("storepath", "stores", "Directory to save secret stores data (default: stores)")
 
 	ver := flag.Bool("version", false, "Print version")
 	debug := flag.Bool("d", false, "Enable debug settings")
@@ -83,7 +83,6 @@ func main() {
 	service := &identity.Service{
 		TenantURL:     *idtenanturl,
 		Client:        idClient,
-		Logger:        logger,
 		AuthnProvider: userAuth,
 	}
 

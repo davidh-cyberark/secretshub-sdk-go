@@ -65,7 +65,6 @@ func main() {
 	service := &identity.Service{
 		TenantURL:     *idtenanturl,
 		Client:        idClient,
-		Logger:        logger,
 		AuthnProvider: userAuth,
 	}
 
@@ -99,16 +98,16 @@ func main() {
 		logger.Fatalf("failed to get policies: %v", err)
 	}
 	if policies.JSON400 != nil {
-		logger.Fatalf("failed to get policies, error: %s", policies.JSON400.String())
+		logger.Fatalf("failed to get policies, error: %s", policies.JSON400.Error())
 	}
 	if policies.JSON401 != nil {
-		logger.Fatalf("failed to get policies, error: %s", policies.JSON401.String())
+		logger.Fatalf("failed to get policies, error: %s", policies.JSON401.Error())
 	}
 	if policies.JSON403 != nil {
-		logger.Fatalf("failed to get policies, error: %s", policies.JSON403.String())
+		logger.Fatalf("failed to get policies, error: %s", policies.JSON403.Error())
 	}
 	if policies.JSON500 != nil {
-		logger.Fatalf("failed to get policies, error: %s", policies.JSON500.String())
+		logger.Fatalf("failed to get policies, error: %s", policies.JSON500.Error())
 	}
 	for pp := range policies.JSON200.Policies {
 		p, err := policies.JSON200.Policies[pp].AsPolicyExtendedOutput()
@@ -120,6 +119,7 @@ func main() {
 
 	logger.Println("Successfully listed sync policies")
 }
+
 func PrintAsJSON(obj interface{}) {
 	data, err := json.MarshalIndent(obj, "", "  ")
 	if err != nil {
@@ -128,7 +128,9 @@ func PrintAsJSON(obj interface{}) {
 	}
 	fmt.Println(string(data))
 }
+
 func AddAcceptApplicationJSONHeader(_ context.Context, req *http.Request) error {
 	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Accept", "application/x.secretshub.beta+json")
 	return nil
 }

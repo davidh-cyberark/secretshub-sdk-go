@@ -2,7 +2,7 @@ package secretshub
 
 import "fmt"
 
-func (e *ErrorResponse) String() string {
+func (e *ErrorResponse) Error() string {
 	if e == nil {
 		return "No error response"
 	}
