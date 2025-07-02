@@ -3,7 +3,7 @@ module github.com/davidh-cyberark/secretshub-sdk-go
 go 1.22.7
 
 require (
-	github.com/davidh-cyberark/identityadmin-sdk-go v0.1.1
+	github.com/davidh-cyberark/identityadmin-sdk-go v0.1.2
 	github.com/oapi-codegen/runtime v1.1.1
 )
 

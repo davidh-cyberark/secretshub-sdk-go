@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log/slog"
+	"os"
+
 	"github.com/davidh-cyberark/identityadmin-sdk-go/identity"
 	"github.com/davidh-cyberark/secretshub-sdk-go/secretshub"
-	"io"
-	"log"
-	"net/http"
-	"os"
 )
 
 var (
@@ -23,7 +22,12 @@ func main() {
 	idpass := flag.String("idpass", "", "Identity user password")
 	shurl := flag.String("shurl", "", "Secrets Hub URL, Ex: https://EXAMPLE.secretshub.cyberark.cloud/")
 
-	storepath := flag.String("storepath", "stores", "Path to secret stores data")
+	filter := flag.String("filter", "", "Filter to apply when retrieving secrets")
+	limit := flag.Int("limit", 100, "Maximum number of secrets to retrieve (default: 100, min: 1, max: 1000)")
+	offset := flag.Int("offset", 0, "Offset for pagination (default: 0)")
+	projectionFlag := flag.Bool("x", false, "Set Projection to get extended output")
+
+	getall := flag.Bool("a", false, "Get all secrets, ignoring limit and offset")
 
 	ver := flag.Bool("version", false, "Print version")
 	debug := flag.Bool("d", false, "Enable debug settings")
@@ -34,17 +38,22 @@ func main() {
 		os.Exit(0)
 	}
 
-	if storepath == nil || *storepath == "" {
-		fmt.Println("Please provide a path to the secret stores data using -storepath flag")
+	if *limit > 1000 || *limit < 1 {
+		slog.Error("Limit must be between 1 and 1000")
 		os.Exit(1)
 	}
 
-	// logger
-	logger := log.New(os.Stderr, "[get-secrets] ", log.LstdFlags)
-
-	if !*debug {
-		logger.SetOutput(io.Discard)
+	slogOpts := &slog.HandlerOptions{}
+	if *debug {
+		slogOpts.Level = slog.LevelDebug
 	}
+	handler := slog.NewJSONHandler(os.Stdout, slogOpts).WithAttrs([]slog.Attr{
+		slog.String("service", "secretshub"),
+		slog.String("command", "sh"),
+		slog.String("subcommand", "get-secrets"),
+	})
+	logger := slog.New(handler)
+	slog.SetDefault(logger)
 
 	ctx := context.Background()
 
@@ -58,14 +67,14 @@ func main() {
 	idClient, idClientErr := identity.NewClientWithResponses(*idtenanturl,
 		identity.WithRequestEditorFn(userAuth.Intercept))
 	if idClientErr != nil {
-		logger.Fatalf("failed to create id client: %v", idClientErr)
+		slog.Error(fmt.Sprintf("failed to create id client: %v", idClientErr))
+		os.Exit(1)
 	}
 
 	// Create the Identity service with the client and authentication provider
 	service := &identity.Service{
 		TenantURL:     *idtenanturl,
 		Client:        idClient,
-		Logger:        logger,
 		AuthnProvider: userAuth,
 	}
 
@@ -73,7 +82,8 @@ func main() {
 
 	client, clientErr := secretshub.NewClientWithResponses(*shurl, secretshub.WithRequestEditorFn(userAuth.Intercept))
 	if clientErr != nil {
-		logger.Fatalf("failed to create secretshub client: %v", clientErr)
+		slog.Error(fmt.Sprintf("failed to create secretshub client: %v", clientErr))
+		os.Exit(1)
 	}
 
 	// curl --request GET \
@@ -81,64 +91,41 @@ func main() {
 	//  --header 'Accept: application/json' \
 	//  --header 'Accept: application/x.secretshub.beta+json' \
 	//  --header 'Authorization: Bearer 123'
-	store := &secretshub.SecretStoreWithReplicatedDataOutput{}
-	err := readJSONFile(*storepath, store)
+
+	var secretList *secretshub.SecretListOutput
+	var err error
+
+	projection := "REGULAR"
+	if *projectionFlag {
+		projection = "EXTEND"
+	}
+
+	if *getall {
+		secretList, err = secretshub.FetchAllSecrets(ctx, client, projection, *filter)
+	} else {
+		secretList, err = secretshub.GetSecretsPage(ctx, client, projection, *filter, *limit, *offset)
+	}
 	if err != nil {
-		logger.Fatalf("failed to read secret store from file: %v", err)
+		slog.Error(fmt.Sprintf("failed to fetch secrets: %v", err))
+		os.Exit(1)
 	}
-	projection := "EXTEND"
-	limit := 1000
-	filterByStoreId := fmt.Sprintf("storeId CONTAINS %s", store.Id)
-	params := &secretshub.ListSecretsApiSecretsGetParams{
-		Projection: &projection,
-		Limit:      &limit,
-		Filter:     &filterByStoreId,
-	}
-	resp, err := client.ListSecretsApiSecretsGetWithResponse(ctx, params, AddAcceptApplicationJSONHeader)
-	if err != nil {
-		logger.Fatalf("failed to list secrets: %v", err)
-	}
-	for ss := range resp.JSON200.Secrets {
-		s, err := resp.JSON200.Secrets[ss].AsExtendedSecretOutput()
-		if err != nil {
-			fmt.Printf("failed to convert secret to extended output: %v", err)
-			continue
-		}
-		fmt.Printf("%+v\n", s)
-	}
-	logger.Println("Successfully listed secret store secrets")
+
+	PrintAsJSON(secretList.Secrets)
+
+	slog.Debug("Successfully listed secret store secrets")
 }
 
-func AddAcceptApplicationJSONHeader(ctx context.Context, req *http.Request) error {
-	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Accept", "application/x.secretshub.beta+json")
-	return nil
-}
-
-func readJSONFile(filePath string, target interface{}) error {
-	// Open the file
-	file, err := os.Open(filePath)
-	if err != nil {
-		return fmt.Errorf("error opening file: %w", err)
+func PrintAsJSON(obj interface{}) {
+	if obj == nil {
+		return
 	}
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			fmt.Printf("error closing file: %v", err)
-		}
-	}()
-
-	// Read all the file content
-	byteValue, err := io.ReadAll(file)
+	data, err := json.MarshalIndent(obj, "", "  ")
 	if err != nil {
-		return fmt.Errorf("error reading file: %w", err)
+		fmt.Fprintf(os.Stderr, "failed to marshal object to JSON: %v\n", err)
+		return
 	}
-
-	// Unmarshal the json into the target variable
-	err = json.Unmarshal(byteValue, target)
-	if err != nil {
-		return fmt.Errorf("error unmarshalling JSON: %w", err)
+	if string(data) == "null" {
+		return
 	}
-
-	return nil
+	fmt.Println(string(data))
 }

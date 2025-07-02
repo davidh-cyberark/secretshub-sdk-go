@@ -1610,19 +1610,6 @@ func NewListSecretsApiSecretsGetRequest(server string, params *ListSecretsApiSec
 		return nil, err
 	}
 
-	if params != nil {
-
-		var headerParam0 string
-
-		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "Accept", runtime.ParamLocationHeader, params.Accept)
-		if err != nil {
-			return nil, err
-		}
-
-		req.Header.Set("Accept", headerParam0)
-
-	}
-
 	return req, nil
 }
 
@@ -2348,15 +2335,16 @@ func (r GetTheConnectionStatusOfASecretStoreApiSecretStoresStoreIdStatusConnecti
 }
 
 type ListSecretsApiSecretsGetResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *SecretListOutput
-	JSON400      *ErrorResponse
-	JSON401      *ErrorResponse
-	JSON403      *ErrorResponse
-	JSON405      *ErrorResponse
-	JSON406      *ErrorResponse
-	JSON500      *ErrorResponse
+	Body                              []byte
+	HTTPResponse                      *http.Response
+	JSON200                           *SecretListOutput
+	ApplicationxSecretshubBetaJSON200 *SecretListOutput
+	JSON400                           *ErrorResponse
+	JSON401                           *ErrorResponse
+	JSON403                           *ErrorResponse
+	JSON405                           *ErrorResponse
+	JSON406                           *ErrorResponse
+	JSON500                           *ErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -3915,12 +3903,19 @@ func ParseListSecretsApiSecretsGetResponse(rsp *http.Response) (*ListSecretsApiS
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case rsp.Header.Get("Content-Type") == "application/json" && rsp.StatusCode == 200:
 		var dest SecretListOutput
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case rsp.Header.Get("Content-Type") == "application/x.secretshub.beta+json" && rsp.StatusCode == 200:
+		var dest SecretListOutput
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationxSecretshubBetaJSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest ErrorResponse
