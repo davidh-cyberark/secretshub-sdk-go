@@ -17,4 +17,3 @@ theme:
 apis:
   public@v0:
     root: ./api/secrets-hub-api.yaml
-    output: ./api/secrets-hub-api-v0.html

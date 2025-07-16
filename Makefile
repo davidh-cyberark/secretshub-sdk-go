@@ -15,7 +15,7 @@ OPENAPI_SPECS := $(addprefix api/,$(OPENAPI_SPECS_FILES))
 docs: docs/secrets-hub-api.html
 
 docs/secrets-hub-api.html: api/secrets-hub-api.yaml
-	$(REDOCLY_CLI) build-docs ./api/secrets-hub-api.yaml -o $@
+	$(REDOCLY_CLI) build-docs public@v0 -o $@
 
 .PHONY: gen
 gen: VERSION secretshub/secretshub-client.gen.go secretshub/secretshub-types.gen.go
