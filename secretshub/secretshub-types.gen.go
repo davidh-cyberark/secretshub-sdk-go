@@ -32,12 +32,14 @@ const (
 
 // Defines values for GsmSecretVendorDataReplicationMethod.
 const (
-	AUTOMATICUSERMANAGED GsmSecretVendorDataReplicationMethod = "AUTOMATIC, USER_MANAGED"
+	AUTOMATIC   GsmSecretVendorDataReplicationMethod = "AUTOMATIC"
+	USERMANAGED GsmSecretVendorDataReplicationMethod = "USER_MANAGED"
 )
 
 // Defines values for GsmSecretVendorDataSecretType.
 const (
-	GLOBALREGIONAL GsmSecretVendorDataSecretType = "GLOBAL, REGIONAL"
+	GLOBAL   GsmSecretVendorDataSecretType = "GLOBAL"
+	REGIONAL GsmSecretVendorDataSecretType = "REGIONAL"
 )
 
 // Defines values for PolicyStatus.

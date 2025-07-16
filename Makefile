@@ -11,6 +11,12 @@ export
 OPENAPI_SPECS_FILES := secrets-hub-api.yaml
 OPENAPI_SPECS := $(addprefix api/,$(OPENAPI_SPECS_FILES))
 
+.PHONY: docs
+docs: docs/secrets-hub-api.html
+
+docs/secrets-hub-api.html: api/secrets-hub-api.yaml
+	$(REDOCLY_CLI) build-docs public@v0 -o $@
+
 .PHONY: gen
 gen: VERSION secretshub/secretshub-client.gen.go secretshub/secretshub-types.gen.go
 
@@ -46,7 +52,7 @@ $(BINDIR)/get-policies: VERSION examples/get-policies/main.go secretshub/secrets
 secretshub-client: $(BINDIR)/secretshub-client ## Build the secretshub-client binary
 
 .PHONY: build-all
-build-all: secretshub-client get-all-stores get-secrets get-policies ## Build all binaries
+build-all: gen docs secretshub-client get-all-stores get-secrets get-policies ## Build all binaries
 
 .PHONY: deps vardump clean realclean
 deps: oapi-codegen redocly-cli identity-client ## Install dependencies
@@ -59,6 +65,7 @@ clean::
 
 realclean:: clean
 	rm -f secretshub/*.gen.go
+	rm -f docs/secrets-hub-api.html
 
 distclean:: realclean
 	rm -f $(BINDIR)/identity-client
