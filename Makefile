@@ -10,6 +10,7 @@ export
 
 OPENAPI_SPECS_FILES := secrets-hub-api.yaml
 OPENAPI_SPECS := $(addprefix api/,$(OPENAPI_SPECS_FILES))
+
 .PHONY: docs
 docs: docs/secrets-hub-api.html
 
