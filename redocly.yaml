@@ -9,4 +9,12 @@ theme:
         - lang: curl
         - lang: Go
         - lang: Java
+        - lang: Python
+        - lang: C#
+        - lang: Ruby
+        - lang: JavaScript
 
+apis:
+  public@v0:
+    root: ./api/secrets-hub-api.yaml
+    output: ./api/secrets-hub-api-v0.html
